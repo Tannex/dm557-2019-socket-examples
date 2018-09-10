@@ -3,17 +3,49 @@ package dk.imada.ns;
 import java.io.*;
 import java.net.*;
 import java.util.Date;
+import java.util.Scanner;
 
 public class Main {
 
+    public static void printInfo() {
+        System.out.println("Socket demos");
+        System.out.println("Choose the following");
+        System.out.println("1 - UDP example communication");
+        System.out.println("2 - TCP example communication");
+        System.out.println("3 - start time-server");
+        System.out.println("4 - HTTP GET (assuming server runs from server dir)");
+        System.out.println("5 - HTTP POST (assuming server runs from server dir)");
+        System.out.println("Anything else will end the demo");
+
+    }
+
     public static void main(String[] args) throws IOException {
-/*
-        tryGetMethod();
-        tryPostMethod();
-        timeServer();
-        udpExample();
-*/
-        tcpExample();
+        Scanner sc = new Scanner(System.in);
+        printInfo();
+        while( true ) {
+            String input = sc.nextLine();
+            switch( input ) {
+                case "1":
+                    udpExample();
+                    break;
+                case "2":
+                    tcpExample();
+                    break;
+                case "3":
+                    timeServer();
+                    break;
+                case "4":
+                    tryGetMethod();
+                    break;
+                case "5":
+                    tryPostMethod();
+                    break;
+                case "EXIT":
+                    System.exit(0);
+                default:
+                    printInfo();
+            }
+        }
     }
 
     public static void tcpExample() {

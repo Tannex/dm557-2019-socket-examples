@@ -1,3 +1,16 @@
 = README
 
-Run using intelliJ or similar.
+== Running the demo
+
+Use the gradle wrapper to compile and run the demo
+
+Linux/Mac
+
+ ./gradlew run
+
+
+Windows
+
+ gradlew.bat run
+
+For the HTTP examples, you must start the server first, see the server folders README for info

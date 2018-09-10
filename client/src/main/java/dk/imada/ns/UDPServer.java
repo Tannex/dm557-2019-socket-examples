@@ -11,7 +11,7 @@ public class UDPServer extends Thread {
         try {
             DatagramSocket socket = new DatagramSocket(12000);
 
-            System.out.println("Waiting for packets");
+            System.out.println("UDPServer: Waiting for packets");
 
             byte[] buf = new byte[1024];
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -26,7 +26,7 @@ public class UDPServer extends Thread {
             packet = new DatagramPacket(buf, buf.length, address, port);
             socket.send(packet);
         } catch( IOException exception) {
-            System.out.println("Error in server: " + exception.getMessage());
+            System.out.println("UDPServer: Error in server: " + exception.getMessage());
         }
     }
 }

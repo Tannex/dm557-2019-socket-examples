@@ -24,9 +24,8 @@ public class TCPClient extends Thread {
                 new InputStreamReader(socket.getInputStream())
             );
 
-            System.out.println("Input lowercase sentence:\n");
-            Scanner scanner = new Scanner(System.in);
-            String message = scanner.nextLine();
+            System.out.println("TCPClient: We fake the input of a message: 'Hello DM557!'\n");
+            String message = "'Hello DM557! (TCP sockets here)'";
 
             out.println(message);
             out.println();
@@ -34,12 +33,12 @@ public class TCPClient extends Thread {
 
             // read the response
             String response = in.readLine();
-            System.out.println("Received:" + response);
+            System.out.println("TCPClient: Received:" + response);
             out.close();
             socket.close();
 
         } catch( IOException exception) {
-            System.out.println("Error in client: " + exception.getMessage());
+            System.out.println("TCPClient: Error in client: " + exception.getMessage());
         }
     }
 }

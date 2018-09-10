@@ -39,7 +39,7 @@ public class TCPServer extends Thread {
             socket.close();
             serverSocket.close();
         } catch( IOException exception) {
-            System.out.println("Error in server: " + exception.getMessage());
+            System.out.println("TCPServer: Error in server: " + exception.getMessage());
         }
     }
 }

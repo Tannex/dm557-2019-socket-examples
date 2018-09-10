@@ -1,0 +1,7 @@
+= README
+
+Socket demos are in the client folder, a small webserver in the server folder.
+
+See the README in the subdirectories for instructions.
+
+

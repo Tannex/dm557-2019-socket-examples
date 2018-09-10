@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Scanner;
 
 public class UDPClient extends Thread {
 
@@ -16,9 +15,8 @@ public class UDPClient extends Thread {
 
             DatagramSocket socket = new DatagramSocket();
 
-            System.out.println("Input lowercase sentence:\n");
-            Scanner scanner = new Scanner(System.in);
-            String message = scanner.nextLine();
+            System.out.println("UDPClient: We fake the input of a message: 'Hello DM557!'\n");
+            String message = "'Hello DM557! (UDP)'";
 
             byte[] buf = message.getBytes();
             DatagramPacket packet = new DatagramPacket(buf, buf.length, address, serverPort);
@@ -29,9 +27,9 @@ public class UDPClient extends Thread {
 
             String received = new String(packet.getData(), 0, packet.getLength());
 
-            System.out.println("Received:" + received);
+            System.out.println("UDPClient: Received:" + received);
         } catch( IOException exception) {
-            System.out.println("Error in client: " + exception.getMessage());
+            System.out.println("UDPClient: Error in client: " + exception.getMessage());
         }
     }
 }
