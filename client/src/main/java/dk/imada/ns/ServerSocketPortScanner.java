@@ -53,9 +53,9 @@ public class ServerSocketPortScanner extends Thread {
                 socket.bind(scanAddress);
                 socket.close();
 
-                // Alternatively, the shorthand:
-                ServerSocket otherSocket = new ServerSocket(port);
-                otherSocket.close();
+                // Alternatively, the shorthand: (only use one of the options at a time)
+                // ServerSocket otherSocket = new ServerSocket(port);
+                // otherSocket.close();
 
                 // If the server socket successfully binds, we know that no service is listening on
                 // the currently tested port, so we ignore it.
