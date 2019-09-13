@@ -2,48 +2,62 @@ package dk.imada.ns;
 
 import java.io.*;
 import java.net.*;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
 
     public static void printInfo() {
+        System.out.println();
         System.out.println("Socket demos");
-        System.out.println("Choose the following");
+        System.out.println("Choose from the following");
         System.out.println("1 - UDP example communication");
         System.out.println("2 - TCP example communication");
         System.out.println("3 - start time-server");
-        System.out.println("4 - HTTP GET (assuming server runs from server dir)");
-        System.out.println("5 - HTTP POST (assuming server runs from server dir)");
-        System.out.println("Anything else will end the demo");
-
+        System.out.println("4 - start time-client");
+        System.out.println("5 - HTTP GET (assuming server runs from server dir)");
+        System.out.println("6 - HTTP POST (assuming server runs from server dir)");
+        System.out.println("7 - Socket port scanner");
+        System.out.println("8 - ServerSocket port scanner");
+        System.out.println("exit - terminate the program");
+        System.out.println();
     }
 
     public static void main(String[] args) throws IOException {
         Scanner sc = new Scanner(System.in);
-        printInfo();
-        while( true ) {
-            String input = sc.nextLine();
-            switch( input ) {
-                case "1":
-                    udpExample();
-                    break;
-                case "2":
-                    tcpExample();
-                    break;
-                case "3":
-                    timeServer();
-                    break;
-                case "4":
-                    tryGetMethod();
-                    break;
-                case "5":
-                    tryPostMethod();
-                    break;
-                case "EXIT":
-                    System.exit(0);
-                default:
-                    printInfo();
+        while (true) {
+            printInfo();
+            String input = sc.nextLine().toLowerCase();
+            switch (input) {
+            case "1":
+                udpExample();
+                break;
+            case "2":
+                tcpExample();
+                break;
+            case "3":
+                timeServer();
+                break;
+            case "4":
+                timeClient();
+                break;
+            case "5":
+                tryGetMethod();
+                break;
+            case "6":
+                tryPostMethod();
+                break;
+            case "7":
+                socketPortScanExample(sc);
+                break;
+            case "8":
+                serverSocketPortScanExample(sc);
+                break;
+            case "exit":
+                sc.close();
+                System.exit(0);
+            default:
+                System.out.println("Invalid input: " + input);
             }
         }
     }
@@ -59,22 +73,18 @@ public class Main {
     }
 
     // Demo using netcat: netcat -u localhost 4445
+    // Moved into its own file for threading.
     static void timeServer() throws IOException {
-        DatagramSocket socket = new DatagramSocket(4445);
-        int count = 0;
-        while(count < 10) {
-            System.out.println("Waiting for packets");
-            byte[] buf = new byte[256];
-            DatagramPacket packet = new DatagramPacket(buf, buf.length);
-            socket.receive(packet);
+        (new TimeServer()).start();
+    }
 
-            InetAddress address = packet.getAddress();
-            int port = packet.getPort();
-            buf = new Date().toString().getBytes();
-            packet = new DatagramPacket(buf, buf.length, address, port);
-            socket.send(packet);
-
-            count++;
+    static void timeClient() {
+        TimeClient client = new TimeClient();
+        client.start();
+        try {
+            client.join();
+        } catch (InterruptedException e) {
+            //TODO: handle exception
         }
     }
 
@@ -85,7 +95,7 @@ public class Main {
         PrintWriter out = new PrintWriter(socket.getOutputStream(), autoflush);
         BufferedReader in = new BufferedReader(
 
-        new InputStreamReader(socket.getInputStream()));
+                new InputStreamReader(socket.getInputStream()));
         out.println("GET / HTTP/1.1");
         out.println();
 
@@ -114,9 +124,7 @@ public class Main {
 
         boolean autoflush = true;
         PrintWriter out = new PrintWriter(socket.getOutputStream(), autoflush);
-        BufferedReader in = new BufferedReader(
-
-        new InputStreamReader(socket.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out.write("POST / HTTP/1.0\r\n");
         out.write("Content-Length: " + data.length() + "\r\n");
         out.write("Content-Type: application/json\r\n");
@@ -139,6 +147,150 @@ public class Main {
         }
         System.out.println(sb.toString());
         socket.close();
+
+    }
+
+    static void socketPortScanExample(Scanner scanner) {
+
+        int portMin = 0;
+        int portMax = 0;
+
+        Boolean exit = false;
+        Boolean getMin = true, getMax = true;
+
+        // Get portMin
+        while (getMin && !exit) {
+            System.out.println("Please enter lowest port number to scan:");
+            System.out.println("Or \"exit\" to return to previous menu");
+            String input = scanner.nextLine().toLowerCase();
+
+            switch (input) {
+            case "exit":
+                exit = true;
+                break;
+            default:
+                try {
+                    portMin = Integer.parseInt(input);
+                    getMin = false;
+                } catch (Exception e) {
+                    System.out.println();
+                }
+                break;
+            }
+        }
+
+        // Get portMax
+        while (getMax && !exit) {
+            System.out.println("Please enter highest port number to scan:");
+            System.out.println("Or \"exit\" to return to previous menu");
+            String input = scanner.nextLine().toLowerCase();
+
+            switch (input) {
+            case "exit":
+                exit = true;
+                break;
+            default:
+                try {
+                    portMax = Integer.parseInt(input);
+                    assert portMin <= portMax;
+                    getMax = false;
+                } catch (Exception e) {
+                    System.out.println();
+                }
+                break;
+            }
+        }
+
+        if (!exit && portMin <= portMax) {
+            // Parallelize port scanning by starting multiple instances if large range is to
+            // be scanned.
+            // This is primarily due to socket port scanning being observed to run slowly on
+            // Windows.
+            ArrayList<SocketPortScanner> portScanners = new ArrayList<SocketPortScanner>((portMax - portMin) / 20);
+            for (int i = portMin; i <= portMax; i += 20) {
+                int localMin = i;
+                int localMax = Math.min(i + 19, portMax);
+                System.out.println("Starting scan: " + localMin + "-" + localMax);
+                portScanners.add(new SocketPortScanner(localMin, localMax));
+            }
+            portScanners.forEach((portScanner) -> portScanner.start());
+            for (SocketPortScanner portScanner : portScanners) {
+                try {
+                    portScanner.join();
+                } catch (InterruptedException e) {
+                    System.out.println("Something went wrong while waiting for port scan to finish");
+                }
+            }
+        }
+
+    }
+
+
+    static void serverSocketPortScanExample(Scanner scanner) {
+
+        int portMin = 0;
+        int portMax = 0;
+
+        Boolean exit = false;
+        Boolean getMin = true, getMax = true;
+
+        // Get portMin
+        while (getMin && !exit) {
+            System.out.println("Please enter lowest port number to scan:");
+            System.out.println("Or \"exit\" to return to previous menu");
+            String input = scanner.nextLine().toLowerCase();
+
+            switch (input) {
+            case "exit":
+                exit = true;
+                break;
+            default:
+                try {
+                    portMin = Integer.parseInt(input);
+                    getMin = false;
+                } catch (Exception e) {
+                    System.out.println();
+                }
+                break;
+            }
+        }
+
+        // Get portMax
+        while (getMax && !exit) {
+            System.out.println("Please enter highest port number to scan:");
+            System.out.println("Or \"exit\" to return to previous menu");
+            String input = scanner.nextLine().toLowerCase();
+
+            switch (input) {
+            case "exit":
+                exit = true;
+                break;
+            default:
+                try {
+                    portMax = Integer.parseInt(input);
+                    assert portMin <= portMax;
+                    getMax = false;
+                } catch (Exception e) {
+                    System.out.println();
+                }
+                break;
+            }
+        }
+
+        if (!exit && portMin <= portMax) {
+            // We do not need to parallelize since the OS will almost instantly tell us if
+            // we can
+            // bind to a port or not.
+            System.out.println("Starting scan: " + portMin + "-" + portMax);
+            ServerSocketPortScanner serverSocketPortScanner = new ServerSocketPortScanner(portMin, portMax);
+            serverSocketPortScanner.start();
+            try {
+                serverSocketPortScanner.join();
+            } catch (InterruptedException e) {
+                System.out.println("Something went wrong while waiting for port scan to finish");
+            }
+
+        }
 
     }
 
